@@ -19,6 +19,8 @@ g_current_pose = None
 g_pose_acc = 0.1
 g_orientation_acc = 0.1
 
+g_vel_value = Twist()
+
 g_kill_node = False
 g_robot_curr_state = 0
 g_robot_states= {0: 'Adjusting Orientation',
@@ -31,7 +33,7 @@ def odmetry_cb(msg):
 
     global g_current_orientation, g_current_pose
 
-    curr_pose = msg.pose.pose.position
+    g_current_pose = msg.pose.pose.position
 
     curr_quat_x = msg.pose.pose.orientation.x
     curr_quat_y = msg.pose.pose.orientation.y
@@ -50,9 +52,37 @@ def odmetry_cb(msg):
 
 def adjust_orientation():
 
-    
+    global g_vel_value
+
+    x_diff = g_desired_pos.x - g_current_pose.x
+    y_diff = g_desired_pos.y - g_current_pose.y
+
+    desired_orietation = math.atan2(y_diff, x_diff)
+
+    curr_orientation_diff = desired_orietation - g_current_orientation
+
+    if abs(curr_orientation_diff) > g_orientation_acc:
+        if curr_orientation_diff > 0:
+            g_vel_value.angular.z = 0.1
+        else:
+            g_vel_value.angular.z = -0.1
+    else:
+        g_vel_value.angular.z = 0.0
 
 
+def drive_towards_goal():
+
+    global g_vel_value
+
+    x_diff = g_desired_pos.x - g_current_pose.x
+    y_diff = g_desired_pos.y - g_current_pose.y
+
+    distance = math.sqrt(math.pow(x_diff, 2)+math.pow(y_diff, 2))
+
+    if distance > g_pose_acc:
+        vel_value.linear.x = 0.2
+    else:
+        vel_value.linear.x = 0.0
 
 def take_action(pose_data):
 
