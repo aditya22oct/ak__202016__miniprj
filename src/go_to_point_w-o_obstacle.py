@@ -13,20 +13,50 @@ g_desired_pos.x = 5.0
 g_desired_pos.y = 0.0
 g_desired_pos.z = 0.0
 
+g_current_orientation = None
+g_current_pose = None
+
+g_pose_acc = 0.1
+g_orientation_acc = 0.1
 
 g_kill_node = False
-g_bot_state= 0
-g_pose_acc = 0.01
+g_robot_curr_state = 0
+g_robot_states= {0: 'Adjusting Orientation',
+              1: 'Moving towards goal',
+              2: 'Reached goal'
+              }
+
 
 def odmetry_cb(msg):
 
+    global g_current_orientation, g_current_pose
+
     curr_pose = msg.pose.pose.position
-    take_action(curr_pose)
+
+    curr_quat_x = msg.pose.pose.orientation.x
+    curr_quat_y = msg.pose.pose.orientation.y
+    curr_quat_z = msg.pose.pose.orientation.z
+    curr_quat_w = msg.pose.pose.orientation.w
+
+    curr_quat = [curr_quat_x,
+                 curr_quat_y,
+                 curr_quat_z,
+                 curr_quat_w
+                 ]
+
+    curr_euler = euler_from_quaternion(curr_quat)
+    g_current_orientation = curr_euler[2]
+
+
+def adjust_orientation():
+
+    
+
 
 
 def take_action(pose_data):
 
-    pub_cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    pub_cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
     vel_value = Twist()
 
     x_diff = g_desired_pos.x - pose_data.x
@@ -34,11 +64,11 @@ def take_action(pose_data):
 
     distance = math.sqrt(math.pow(x_diff, 2)+math.pow(y_diff, 2))
 
-    if distance >= g_pose_acc:
+    if distance > g_pose_acc:
         vel_value.linear.x = 0.2
     else:
         vel_value.linear.x = 0.0
-
+    rospy.loginfo(vel_value.linear.x)
     pub_cmd_vel.publish(vel_value)
     rospy.loginfo(distance)
 
@@ -47,9 +77,8 @@ def main():
 
     global pub_cmd_vel, vel_value, kill_node
 
-    rospy.init_node('turn_robot')
-    r = rospy.Rate(10)
-
+    rospy.init_node('go_to_point_w-o_obstacle')
+    r = rospy.Rate(4)
     sub_odom = rospy.Subscriber('/odom', Odometry, odmetry_cb)
 
     rospy.spin()
