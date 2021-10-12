@@ -31,6 +31,16 @@ def laser_scan_cb(msg):
         }
 
 
+def change_state(state):
+
+    global g_robot_curr_state
+
+    if g_robot_curr_state != state:
+        g_robot_states = state
+
+    rospy.loginfo(g_robot_states[g_robot_curr_state])
+
+
 def robot_state_evaluator():
 
     f_region = g_laser_readings['front_region']
@@ -38,18 +48,56 @@ def robot_state_evaluator():
     fr_region = g_laser_readings['front_right_region']
 
     #f<d fr < d fl < d action: turn_left c 1
+    if ((f_region < d) and (fr_region < d) and (fl_region < d)):
+        change_state(1)
     #f<d fr < d fl > d action: turn left c 1
+    elif ((f_region < d) and (fr_region < d) and (fl_region > d)):
+        change_state(1)
     #f<d fr > d fl < d action: turn left c 1
+    elif ((f_region < d) and (fr_region > d) and (fl_region < d)):
+        change_state(1)
     #f<d fr > d fl > d action: turn_left c 1
+    elif ((f_region < d) and (fr_region > d) and (fl_region > d)):
+        change_state(1)
     #f>d fr < d fl < d action: find wall c 0
+    elif ((f_region > d) and (fr_region < d) and (fl_region < d)):
+        change_state(0)
     #f>d fr < d fl > d action: follow wall c 2
+    elif ((f_region > d) and (fr_region < d) and (fl_region > d)):
+        change_state(2)
     #f>d fr > d fl < d action: find Wall c 0
+    elif ((f_region > d) and (fr_region > d) and (fl_region < d)):
+        change_state(0)
     #f>d fr > d fl > d action: find wall c 0
+    elif ((f_region > d) and (fr_region > d) and (fl_region > d)):
+        change_state(0)
+    else:
+        pass
 
 
-def find_gap():
-    global regions
-    print(regions)
+def find_wall():
+
+    global g_vel_value
+
+    g_vel_value.linear.x = 0.2
+    g_vel_value.angular.z = -0.2
+
+
+def turn_left():
+
+    global g_vel_value
+
+    g_vel_value.linear.x = 0
+    g_vel_value.angular.z = 0.2
+
+
+def follow_wall():
+
+    global g_vel_value
+
+    g_vel_value.linear.x = 0.4
+    g_vel_value.angular.z = 0
+
 
 def main():
     rospy.init_node('laser_subscriber')
