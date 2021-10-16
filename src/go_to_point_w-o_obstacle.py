@@ -7,6 +7,7 @@ from tf.transformations import euler_from_quaternion
 import math
 
 # Declaring Global Variables
+# change_state
 
 g_desired_pos = Point()
 g_desired_pos.x = 2.0
